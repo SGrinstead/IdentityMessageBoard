@@ -16,11 +16,6 @@ namespace IdentityMessageBoard.Controllers
             _context = context;
         }
 
-        public IActionResult Index()
-        {
-            return View();
-        }
-
         [Route("/users/{userId}/allmessages")]
         public IActionResult AllMessages(string userId)
         {

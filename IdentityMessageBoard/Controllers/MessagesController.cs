@@ -4,16 +4,19 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
+using Microsoft.AspNetCore.Identity;
 
 namespace IdentityMessageBoard.Controllers
 {
     public class MessagesController : Controller
     {
         private readonly MessageBoardContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public MessagesController(MessageBoardContext context)
+        public MessagesController(MessageBoardContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         public IActionResult Index()
@@ -75,6 +78,34 @@ namespace IdentityMessageBoard.Controllers
             _context.SaveChanges();
 
             return RedirectToAction("Index");
+        }
+
+        [Route("/users/{userId}/messages/{messageId}/edit")]
+        public IActionResult Edit(string userId, int messageId)
+        {
+            var message = _context.Messages
+                .Where(m => m.Id == messageId)
+                .Include(m => m.Author)
+                .First();
+
+            if (userId != message.Author.Id) return BadRequest();
+            if (message is null) return NotFound();
+            return View(message);
+        }
+
+        [HttpPost]
+        [Route("/users/{userId}/messages/{messageId}/update")]
+        public IActionResult Update(string userId, int messageId, int expiresIn, Message message)
+        {
+            if (!ModelState.IsValid) return BadRequest();
+            if (userId != _userManager.GetUserId(User)) return BadRequest();
+            
+            message.Id = messageId;
+            message.ExpirationDate = DateTime.UtcNow.AddDays(expiresIn);
+            _context.Messages.Update(message);
+            _context.SaveChanges();
+
+            return Redirect($"/users/{userId}/allmessages");
         }
     }
 }
