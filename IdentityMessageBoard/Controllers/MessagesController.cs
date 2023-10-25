@@ -27,6 +27,7 @@ namespace IdentityMessageBoard.Controllers
             return View(messages);
         }
 
+        [Authorize(Roles = "Admin")]
         public IActionResult AllMessages()
         {
             var allMessages = new Dictionary<string, List<Message>>()
