@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace IdentityMessageBoard.Controllers
 {
+    [Authorize]
     public class MessagesController : Controller
     {
         private readonly MessageBoardContext _context;
@@ -19,6 +20,7 @@ namespace IdentityMessageBoard.Controllers
             _userManager = userManager;
         }
 
+        [AllowAnonymous]
         public IActionResult Index()
         {
             var messages = _context.Messages
@@ -55,14 +57,12 @@ namespace IdentityMessageBoard.Controllers
             return View(allMessages);
         }
 
-        [Authorize]
         public IActionResult New()
         {
             return View();
         }
 
         [HttpPost]
-        [Authorize]
         public IActionResult Create(string userId, string content, int expiresIn)
         {
             var user = _context.ApplicationUsers.Find(userId);
@@ -80,6 +80,7 @@ namespace IdentityMessageBoard.Controllers
             return RedirectToAction("Index");
         }
 
+        [Authorize(Roles = "Super User,Admin")]
         [Route("/users/{userId}/messages/{messageId}/edit")]
         public IActionResult Edit(string userId, int messageId)
         {
@@ -94,6 +95,7 @@ namespace IdentityMessageBoard.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Super User,Admin")]
         [Route("/users/{userId}/messages/{messageId}/update")]
         public IActionResult Update(string userId, int messageId, int expiresIn, Message message)
         {
@@ -108,6 +110,7 @@ namespace IdentityMessageBoard.Controllers
             return Redirect($"/users/{userId}/allmessages");
         }
 
+        [Authorize(Roles = "Super User,Admin")]
         [Route("/users/{userId}/messages/{messageId}/delete")]
         public IActionResult Delete(string userId, int messageId)
         {

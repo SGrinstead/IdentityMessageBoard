@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace IdentityMessageBoard.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Super User,Admin")]
     public class UsersController : Controller
     {
         private readonly MessageBoardContext _context;
