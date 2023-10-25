@@ -107,5 +107,18 @@ namespace IdentityMessageBoard.Controllers
 
             return Redirect($"/users/{userId}/allmessages");
         }
+
+        [Route("/users/{userId}/messages/{messageId}/delete")]
+        public IActionResult Delete(string userId, int messageId)
+        {
+            if (userId != _userManager.GetUserId(User)) return BadRequest();
+
+            var messageToDelete = _context.Messages.Find(messageId);
+            if (messageToDelete is null) return NotFound();
+            _context.Remove(messageToDelete);
+            _context.SaveChanges();
+
+            return Redirect($"/users/{userId}/allmessages");
+        }
     }
 }
