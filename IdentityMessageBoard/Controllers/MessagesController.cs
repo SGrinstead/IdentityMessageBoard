@@ -35,7 +35,7 @@ namespace IdentityMessageBoard.Controllers
                 { "expired", new List<Message>() }
             };
 
-            foreach (var message in _context.Messages)
+            foreach (var message in _context.Messages.Include(m => m.Author))
             {
                 if (message.IsActive())
                 {
