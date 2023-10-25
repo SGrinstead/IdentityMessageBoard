@@ -1,0 +1,13 @@
+﻿@model Message
+
+<form method="post" action="/users/@Model.Author.Id/messages/@Model.Id/update">
+    <div>
+        <label for="Content">Content</label>
+        <input type="text" name="Content" value="@Model.Content" />
+    </div>
+    <div>
+        <label for="ExpiresIn">Exires in (num days)</label>
+        <input type="number" name="ExpiresIn" />
+    </div>
+    <button type="submit">Update</button>
+</form>

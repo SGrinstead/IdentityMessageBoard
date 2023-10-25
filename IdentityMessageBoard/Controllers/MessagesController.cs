@@ -4,18 +4,23 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
+using Microsoft.AspNetCore.Identity;
 
 namespace IdentityMessageBoard.Controllers
 {
+    [Authorize]
     public class MessagesController : Controller
     {
         private readonly MessageBoardContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public MessagesController(MessageBoardContext context)
+        public MessagesController(MessageBoardContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
+        [AllowAnonymous]
         public IActionResult Index()
         {
             var messages = _context.Messages
@@ -27,6 +32,7 @@ namespace IdentityMessageBoard.Controllers
             return View(messages);
         }
 
+        [Authorize(Roles = "Admin")]
         public IActionResult AllMessages()
         {
             var allMessages = new Dictionary<string, List<Message>>()
@@ -51,14 +57,12 @@ namespace IdentityMessageBoard.Controllers
             return View(allMessages);
         }
 
-        [Authorize]
         public IActionResult New()
         {
             return View();
         }
 
         [HttpPost]
-        [Authorize]
         public IActionResult Create(string userId, string content, int expiresIn)
         {
             var user = _context.ApplicationUsers.Find(userId);
@@ -74,6 +78,50 @@ namespace IdentityMessageBoard.Controllers
             _context.SaveChanges();
 
             return RedirectToAction("Index");
+        }
+
+        [Authorize(Roles = "Super User,Admin")]
+        [Route("/users/{userId}/messages/{messageId}/edit")]
+        public IActionResult Edit(string userId, int messageId)
+        {
+            var message = _context.Messages
+                .Where(m => m.Id == messageId)
+                .Include(m => m.Author)
+                .First();
+
+            if (userId != message.Author.Id) return BadRequest();
+            if (message is null) return NotFound();
+            return View(message);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Super User,Admin")]
+        [Route("/users/{userId}/messages/{messageId}/update")]
+        public IActionResult Update(string userId, int messageId, int expiresIn, Message message)
+        {
+            if (!ModelState.IsValid) return BadRequest();
+            if (userId != _userManager.GetUserId(User)) return BadRequest();
+            
+            message.Id = messageId;
+            message.ExpirationDate = DateTime.UtcNow.AddDays(expiresIn);
+            _context.Messages.Update(message);
+            _context.SaveChanges();
+
+            return Redirect($"/users/{userId}/allmessages");
+        }
+
+        [Authorize(Roles = "Super User,Admin")]
+        [Route("/users/{userId}/messages/{messageId}/delete")]
+        public IActionResult Delete(string userId, int messageId)
+        {
+            if (userId != _userManager.GetUserId(User)) return BadRequest();
+
+            var messageToDelete = _context.Messages.Find(messageId);
+            if (messageToDelete is null) return NotFound();
+            _context.Remove(messageToDelete);
+            _context.SaveChanges();
+
+            return Redirect($"/users/{userId}/allmessages");
         }
     }
 }
